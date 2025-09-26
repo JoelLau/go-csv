@@ -1,0 +1,4 @@
+package gocsv
+
+func main() {
+}
