@@ -1,4 +1,0 @@
-package gocsv
-
-func main() {
-}
