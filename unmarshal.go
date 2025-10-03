@@ -3,6 +3,7 @@ package gocsv
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 const StructTagCSV = "csv"
@@ -57,7 +58,34 @@ func Unmarshal(data []byte, v any) error {
 		// iterate through map so we skip csv columns that don't need parsing
 		for columnIndex, fieldIndex := range mm {
 			field := newElem.Field(fieldIndex)
-			field.SetString(row[columnIndex])
+			rawVal := row[columnIndex]
+
+			switch field.Kind() {
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				i, err := strconv.ParseInt(rawVal, 10, 64)
+				if err != nil {
+					return fmt.Errorf("error parsing csv cell value to integer: %+v", err)
+				}
+
+				field.SetInt(i)
+			case reflect.Float32:
+				i, err := strconv.ParseFloat(rawVal, 32)
+				if err != nil {
+					return fmt.Errorf("error parsing csv cell value to float32: %+v", err)
+				}
+
+				field.SetFloat(i)
+			case reflect.Float64:
+				i, err := strconv.ParseFloat(rawVal, 64)
+				if err != nil {
+					return fmt.Errorf("error parsing csv cell value to float64: %+v", err)
+				}
+
+				field.SetFloat(i)
+			case reflect.String:
+				field.SetString(rawVal)
+			default:
+			}
 		}
 
 		newSlice = reflect.Append(newSlice, newElem)

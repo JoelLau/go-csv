@@ -11,6 +11,11 @@ func ReadAll(data []byte) ([][]string, error) {
 
 	lines := regexp.MustCompile("\r?\n").Split(string(data), -1)
 	for _, line := range lines {
+		if len(line) == 0 {
+			// skip empty lines
+			continue
+		}
+
 		row, err := ReadRow(string(line))
 		if err != nil {
 			return nil, err
