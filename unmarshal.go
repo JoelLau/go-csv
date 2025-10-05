@@ -61,7 +61,7 @@ func Unmarshal(data []byte, v any) error {
 			rawVal := row[columnIndex]
 
 			// TODO: check for unmarshaller interface impl
-			if err := setValue(field, rawVal); err != nil {
+			if err := setFieldValue(field, rawVal); err != nil {
 				return err
 			}
 		}
@@ -73,8 +73,7 @@ func Unmarshal(data []byte, v any) error {
 	return nil
 }
 
-// TODO: make function more descriptive
-func setValue(field reflect.Value, rawVal string) error {
+func setFieldValue(field reflect.Value, rawVal string) error {
 	switch field.Kind() {
 	case reflect.Bool:
 		switch rawVal {
@@ -85,7 +84,14 @@ func setValue(field reflect.Value, rawVal string) error {
 		default:
 			return fmt.Errorf("error attempting to set value '%+v' to bool", rawVal)
 		}
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		i, err := strconv.ParseUint(rawVal, 10, 64)
+		if err != nil {
+			return fmt.Errorf("error parsing csv cell value to uint: %+v", err)
+		}
+
+		field.SetUint(i)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		i, err := strconv.ParseInt(rawVal, 10, 64)
 		if err != nil {
 			return fmt.Errorf("error parsing csv cell value to integer: %+v", err)

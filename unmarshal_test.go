@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	gocsv "github.com/JoelLau/go-csv"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnmarshal(t *testing.T) {
+func TestUnmarshal_BasicTypes(t *testing.T) {
 	t.Parallel()
 
 	type Model struct {
@@ -22,7 +23,7 @@ func TestUnmarshal(t *testing.T) {
 	given := []byte(`int,uint,float,bool,string
 0,5,0.9,true,asdf
 1,6,6.2,false,lorem ipsum
-2,-1,1.3,true,sdfdf1
+2,7,1.3,true,sdfdf1
 `)
 
 	got := []Model{}
@@ -37,5 +38,7 @@ func TestUnmarshal(t *testing.T) {
 
 	assert.NotNil(t, got)
 	assert.Len(t, got, 3)
-	require.ElementsMatch(t, got, want)
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("MakeGatewayInfo() mismatch (-want +got):\n%s", diff)
+	}
 }
