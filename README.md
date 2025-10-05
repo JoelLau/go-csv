@@ -4,12 +4,12 @@ CSV encoder written in and for the Go programming language.
 
 ## TODOs
 
-- [ ] set up CI
-    - [ ] build
+- [-] set up CI
+    - [x] build
     - [ ] code quality - golangci-lint
-    - [ ] correctness - tests
-- [ ] set up CD
-    - [ ] push to go.dev on tag on `main`
+    - [x] correctness - tests
+- [x] ~~set up CD~~ done automatically
+    - [x] ~~push to go.dev on tag on `main`~~
 - [ ] create default structs of top level functions (similar to `DefaultHTTPClient`):
     - [ ] default reader
     - [ ] default parser
@@ -18,6 +18,7 @@ CSV encoder written in and for the Go programming language.
     - [ ] add tests
     - [ ] use sentinel errors or custom error structs
 - [ ] parse other value types
+    - [ ] basic types
     - [ ] handle custom types, either:
         - [ ] 1. check for interface implmentation
         - [ ] 2. register type parsers

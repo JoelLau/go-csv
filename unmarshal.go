@@ -9,7 +9,7 @@ import (
 const StructTagCSV = "csv"
 
 func Unmarshal(data []byte, v any) error {
-	// reflect type of `v` (expecting `&S[]`)
+	// reflect value of `v` (expecting `&S[]`)
 	vVal := reflect.ValueOf(v)
 	if vVal.Kind() != reflect.Pointer {
 		return fmt.Errorf("`v` must be pointer")
@@ -28,7 +28,7 @@ func Unmarshal(data []byte, v any) error {
 		return fmt.Errorf("`v` must be pointer to slice of struct types")
 	}
 
-	m, err := StructTagFieldIndexMap(v)
+	m, err := newIndexMap(v)
 	if err != nil {
 		return err
 	}
@@ -60,31 +60,9 @@ func Unmarshal(data []byte, v any) error {
 			field := newElem.Field(fieldIndex)
 			rawVal := row[columnIndex]
 
-			switch field.Kind() {
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-				i, err := strconv.ParseInt(rawVal, 10, 64)
-				if err != nil {
-					return fmt.Errorf("error parsing csv cell value to integer: %+v", err)
-				}
-
-				field.SetInt(i)
-			case reflect.Float32:
-				i, err := strconv.ParseFloat(rawVal, 32)
-				if err != nil {
-					return fmt.Errorf("error parsing csv cell value to float32: %+v", err)
-				}
-
-				field.SetFloat(i)
-			case reflect.Float64:
-				i, err := strconv.ParseFloat(rawVal, 64)
-				if err != nil {
-					return fmt.Errorf("error parsing csv cell value to float64: %+v", err)
-				}
-
-				field.SetFloat(i)
-			case reflect.String:
-				field.SetString(rawVal)
-			default:
+			// TODO: check for unmarshaller interface impl
+			if err := setValue(field, rawVal); err != nil {
+				return err
 			}
 		}
 
@@ -95,8 +73,50 @@ func Unmarshal(data []byte, v any) error {
 	return nil
 }
 
+// TODO: make function more descriptive
+func setValue(field reflect.Value, rawVal string) error {
+	switch field.Kind() {
+	case reflect.Bool:
+		switch rawVal {
+		case "True", "true", "1":
+			field.SetBool(true)
+		case "False", "false", "0":
+			field.SetBool(false)
+		default:
+			return fmt.Errorf("error attempting to set value '%+v' to bool", rawVal)
+		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		i, err := strconv.ParseInt(rawVal, 10, 64)
+		if err != nil {
+			return fmt.Errorf("error parsing csv cell value to integer: %+v", err)
+		}
+
+		field.SetInt(i)
+	case reflect.Float32:
+		i, err := strconv.ParseFloat(rawVal, 32)
+		if err != nil {
+			return fmt.Errorf("error parsing csv cell value to float32: %+v", err)
+		}
+
+		field.SetFloat(i)
+	case reflect.Float64:
+		i, err := strconv.ParseFloat(rawVal, 64)
+		if err != nil {
+			return fmt.Errorf("error parsing csv cell value to float64: %+v", err)
+		}
+
+		field.SetFloat(i)
+	case reflect.String:
+		field.SetString(rawVal)
+	default:
+		return fmt.Errorf("could not find parser for type: %+v", field.Kind())
+	}
+
+	return nil
+}
+
 // build a map with (key: csv header), (val: struct field index)
-func StructTagFieldIndexMap(v any) (map[string]int, error) {
+func newIndexMap(v any) (map[string]int, error) {
 	vType := reflect.TypeOf(v)
 	if vType.Kind() != reflect.Pointer {
 		return nil, fmt.Errorf("`v` must be pointer")
