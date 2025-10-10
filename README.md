@@ -1,5 +1,8 @@
 # Go CSV
 
+[![Build](https://github.com/JoelLau/go-csv/actions/workflows/build.yml/badge.svg)](https://github.com/JoelLau/go-csv/actions/workflows/build.yml)
+[![Test](https://github.com/JoelLau/go-csv/actions/workflows/test.yml/badge.svg)](https://github.com/JoelLau/go-csv/actions/workflows/test.yml)
+
 CSV encoder written in and for the Go programming language.
 
 ## TODOs
