@@ -6,8 +6,17 @@ import (
 	"strconv"
 )
 
+// `Unmarshal` checks if types implement this interface and prefers this in an attempt to parse values.
+// type Unmarshaller interface {
+// 	// WARN: v must be a pointer to a variable
+// 	Unmarshal(data []byte, v any) error
+// }
+//
+// var xUnmarshaller Unmarshaller
+
 const StructTagCSV = "csv"
 
+// TODO: consolidate type checks
 func Unmarshal(data []byte, v any) error {
 	// reflect value of `v` (expecting `&S[]`)
 	vVal := reflect.ValueOf(v)
@@ -44,7 +53,9 @@ func Unmarshal(data []byte, v any) error {
 	// key: csv column index, value: struct field index
 	mm := map[int]int{}
 	for idx, h := range headers {
-		mm[idx] = m[h]
+		if i, ok := m[h]; ok {
+			mm[idx] = i
+		}
 	}
 
 	rows := lines[1:]
@@ -60,7 +71,6 @@ func Unmarshal(data []byte, v any) error {
 			field := newElem.Field(fieldIndex)
 			rawVal := row[columnIndex]
 
-			// TODO: check for unmarshaller interface impl
 			if err := setFieldValue(field, rawVal); err != nil {
 				return err
 			}
@@ -73,47 +83,47 @@ func Unmarshal(data []byte, v any) error {
 	return nil
 }
 
-func setFieldValue(field reflect.Value, rawVal string) error {
+func setFieldValue(field reflect.Value, strVal string) error {
 	switch field.Kind() {
 	case reflect.Bool:
-		switch rawVal {
+		switch strVal {
 		case "True", "true", "1":
 			field.SetBool(true)
 		case "False", "false", "0":
 			field.SetBool(false)
 		default:
-			return fmt.Errorf("error attempting to set value '%+v' to bool", rawVal)
+			return fmt.Errorf("error attempting to set value '%+v' to bool", strVal)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		i, err := strconv.ParseUint(rawVal, 10, 64)
+		i, err := strconv.ParseUint(strVal, 10, 64)
 		if err != nil {
 			return fmt.Errorf("error parsing csv cell value to uint: %+v", err)
 		}
 
 		field.SetUint(i)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		i, err := strconv.ParseInt(rawVal, 10, 64)
+		i, err := strconv.ParseInt(strVal, 10, 64)
 		if err != nil {
 			return fmt.Errorf("error parsing csv cell value to integer: %+v", err)
 		}
 
 		field.SetInt(i)
 	case reflect.Float32:
-		i, err := strconv.ParseFloat(rawVal, 32)
+		i, err := strconv.ParseFloat(strVal, 32)
 		if err != nil {
 			return fmt.Errorf("error parsing csv cell value to float32: %+v", err)
 		}
 
 		field.SetFloat(i)
 	case reflect.Float64:
-		i, err := strconv.ParseFloat(rawVal, 64)
+		i, err := strconv.ParseFloat(strVal, 64)
 		if err != nil {
 			return fmt.Errorf("error parsing csv cell value to float64: %+v", err)
 		}
 
 		field.SetFloat(i)
 	case reflect.String:
-		field.SetString(rawVal)
+		field.SetString(strVal)
 	default:
 		return fmt.Errorf("could not find parser for type: %+v", field.Kind())
 	}

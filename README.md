@@ -17,8 +17,10 @@ CSV encoder written in and for the Go programming language.
 - [ ] make error types part of API
     - [ ] add tests
     - [ ] use sentinel errors or custom error structs
-- [ ] parse other value types
-    - [ ] basic types
+- [x] parse other value types
+    - [x] basic types
+    - [x] unmapped columns
+    - [ ] pointers (for nullsy values)
     - [ ] handle custom types, either:
         - [ ] 1. check for interface implmentation
         - [ ] 2. register type parsers
