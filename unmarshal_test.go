@@ -1,7 +1,9 @@
 package gocsv_test
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	gocsv "github.com/JoelLau/go-csv"
 	"github.com/google/go-cmp/cmp"
@@ -42,4 +44,52 @@ func TestUnmarshal_BasicTypes(t *testing.T) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("Unmarshall() mismatch (-want +got):\n%s", diff)
 	}
+}
+
+type date_yyyyMMdd time.Time
+
+func (d *date_yyyyMMdd) Unmarshal(data []byte) error {
+	s := string(data)
+	t, err := time.Parse(time.DateOnly, s)
+	if err != nil {
+		return fmt.Errorf("failed to parse date '%q': %w", s, err)
+	}
+
+	*d = date_yyyyMMdd(t)
+	return nil
+}
+
+var _ gocsv.CSVUnmarshaller = &date_yyyyMMdd{}
+
+func TestUnmarshal_CustomTypes(t *testing.T) {
+	t.Parallel()
+
+	type StructWithCustomTypes struct {
+		Date date_yyyyMMdd `csv:"date"`
+	}
+
+	given := []byte(`date
+2025-10-11
+1993-03-30
+`)
+	got := make([]StructWithCustomTypes, 0)
+	want := []StructWithCustomTypes{
+		{Date: date_yyyyMMdd(newDate(t, "2025-10-11"))},
+		{Date: date_yyyyMMdd(newDate(t, "1993-03-30"))},
+	}
+
+	err := gocsv.Unmarshal(given, &got)
+	require.NoError(t, err)
+	require.Len(t, got, len(want))
+	require.WithinDuration(t, time.Time(got[0].Date), time.Time(want[0].Date), 0)
+	require.WithinDuration(t, time.Time(got[1].Date), time.Time(want[1].Date), 0)
+}
+
+func newDate(t *testing.T, str string) time.Time {
+	t.Helper()
+
+	r, err := time.Parse(time.DateOnly, str)
+	assert.NoError(t, err)
+
+	return r
 }

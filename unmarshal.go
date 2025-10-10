@@ -6,14 +6,6 @@ import (
 	"strconv"
 )
 
-// `Unmarshal` checks if types implement this interface and prefers this in an attempt to parse values.
-// type Unmarshaller interface {
-// 	// WARN: v must be a pointer to a variable
-// 	Unmarshal(data []byte, v any) error
-// }
-//
-// var xUnmarshaller Unmarshaller
-
 const StructTagCSV = "csv"
 
 // TODO: consolidate type checks
@@ -37,7 +29,7 @@ func Unmarshal(data []byte, v any) error {
 		return fmt.Errorf("`v` must be pointer to slice of struct types")
 	}
 
-	m, err := newIndexMap(v)
+	m, err := newHeaderToIndexMap(v)
 	if err != nil {
 		return err
 	}
@@ -47,8 +39,11 @@ func Unmarshal(data []byte, v any) error {
 		return err
 	}
 
-	// assume first line csontains headers
-	headers := lines[0]
+	// assume first line contains headers
+	var headers []string
+	if len(lines) >= 1 {
+		headers = lines[0]
+	}
 
 	// key: csv column index, value: struct field index
 	mm := map[int]int{}
@@ -58,11 +53,17 @@ func Unmarshal(data []byte, v any) error {
 		}
 	}
 
-	rows := lines[1:]
+	var rows [][]string
+	if len(lines) >= 1 {
+		rows = lines[1:]
+	}
 
 	newSlice := reflect.MakeSlice(vRefType, 0, len(rows))
 
 	for _, row := range rows {
+		if len(row) <= 0 {
+			continue
+		}
 
 		newElem := reflect.New(vRefElem).Elem()
 
@@ -83,7 +84,29 @@ func Unmarshal(data []byte, v any) error {
 	return nil
 }
 
+type CSVUnmarshaller interface {
+	Unmarshal(data []byte) error
+}
+
 func setFieldValue(field reflect.Value, strVal string) error {
+	// Custom unmarshaler check (including pointer receivers)
+	var unmarshalerValue reflect.Value
+	if field.Type().Implements(reflect.TypeOf((*CSVUnmarshaller)(nil)).Elem()) {
+		unmarshalerValue = field
+	} else if field.CanAddr() && reflect.PointerTo(field.Type()).Implements(reflect.TypeOf((*CSVUnmarshaller)(nil)).Elem()) {
+		unmarshalerValue = field.Addr()
+	}
+
+	if unmarshalerValue.IsValid() {
+		if u, ok := unmarshalerValue.Interface().(CSVUnmarshaller); ok {
+			if err := u.Unmarshal([]byte(strVal)); err != nil {
+				return fmt.Errorf("error parsing csv cell value to custom unmarshaller: %w", err)
+			}
+
+			return nil // Important: Stop processing after a custom unmarshaler handles the field.
+		}
+	}
+
 	switch field.Kind() {
 	case reflect.Bool:
 		switch strVal {
@@ -132,7 +155,7 @@ func setFieldValue(field reflect.Value, strVal string) error {
 }
 
 // build a map with (key: csv header), (val: struct field index)
-func newIndexMap(v any) (map[string]int, error) {
+func newHeaderToIndexMap(v any) (map[string]int, error) {
 	vType := reflect.TypeOf(v)
 	if vType.Kind() != reflect.Pointer {
 		return nil, fmt.Errorf("`v` must be pointer")
