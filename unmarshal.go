@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 const StructTagCSV = "csv"
@@ -115,11 +116,19 @@ func setFieldValue(field reflect.Value, strVal string) error {
 		case "False", "false", "0":
 			field.SetBool(false)
 		default:
+			if strings.TrimSpace(strVal) == "" {
+				field.SetBool(reflect.Zero(field.Type()).Bool())
+				break
+			}
 			return fmt.Errorf("error attempting to set value '%+v' to bool", strVal)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		i, err := strconv.ParseUint(strVal, 10, 64)
 		if err != nil {
+			if strings.TrimSpace(strVal) == "" {
+				field.SetUint(reflect.Zero(field.Type()).Uint())
+				break
+			}
 			return fmt.Errorf("error parsing csv cell value to uint: %+v", err)
 		}
 
@@ -127,6 +136,10 @@ func setFieldValue(field reflect.Value, strVal string) error {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		i, err := strconv.ParseInt(strVal, 10, 64)
 		if err != nil {
+			if strings.TrimSpace(strVal) == "" {
+				field.SetInt(reflect.Zero(field.Type()).Int())
+				break
+			}
 			return fmt.Errorf("error parsing csv cell value to integer: %+v", err)
 		}
 
@@ -134,6 +147,10 @@ func setFieldValue(field reflect.Value, strVal string) error {
 	case reflect.Float32:
 		i, err := strconv.ParseFloat(strVal, 32)
 		if err != nil {
+			if strings.TrimSpace(strVal) == "" {
+				field.SetFloat(reflect.Zero(field.Type()).Float())
+				break
+			}
 			return fmt.Errorf("error parsing csv cell value to float32: %+v", err)
 		}
 
@@ -141,6 +158,10 @@ func setFieldValue(field reflect.Value, strVal string) error {
 	case reflect.Float64:
 		i, err := strconv.ParseFloat(strVal, 64)
 		if err != nil {
+			if strings.TrimSpace(strVal) == "" {
+				field.SetFloat(reflect.Zero(field.Type()).Float())
+				break
+			}
 			return fmt.Errorf("error parsing csv cell value to float64: %+v", err)
 		}
 
@@ -148,6 +169,7 @@ func setFieldValue(field reflect.Value, strVal string) error {
 	case reflect.String:
 		field.SetString(strVal)
 	default:
+		field.Set(reflect.Zero(field.Type()))
 		return fmt.Errorf("could not find parser for type: %+v", field.Kind())
 	}
 
