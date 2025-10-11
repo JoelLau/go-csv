@@ -86,7 +86,7 @@ func Unmarshal(data []byte, v any) error {
 }
 
 type CSVUnmarshaller interface {
-	Unmarshal(data []byte) error
+	UnmarshalCSV(data []byte) error
 }
 
 func setFieldValue(field reflect.Value, strVal string) error {
@@ -100,7 +100,7 @@ func setFieldValue(field reflect.Value, strVal string) error {
 
 	if unmarshalerValue.IsValid() {
 		if u, ok := unmarshalerValue.Interface().(CSVUnmarshaller); ok {
-			if err := u.Unmarshal([]byte(strVal)); err != nil {
+			if err := u.UnmarshalCSV([]byte(strVal)); err != nil {
 				return fmt.Errorf("error parsing csv cell value to custom unmarshaller: %w", err)
 			}
 

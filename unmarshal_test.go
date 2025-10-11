@@ -48,7 +48,7 @@ func TestUnmarshal_BasicTypes(t *testing.T) {
 
 type date_yyyyMMdd time.Time
 
-func (d *date_yyyyMMdd) Unmarshal(data []byte) error {
+func (d *date_yyyyMMdd) UnmarshalCSV(data []byte) error {
 	s := string(data)
 	t, err := time.Parse(time.DateOnly, s)
 	if err != nil {
