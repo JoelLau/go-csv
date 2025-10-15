@@ -90,33 +90,32 @@ type CSVUnmarshaller interface {
 }
 
 func setFieldValue(field reflect.Value, strVal string) error {
-	// Custom unmarshaler check (including pointer receivers)
-	var unmarshalerValue reflect.Value
-	if field.Type().Implements(reflect.TypeOf((*CSVUnmarshaller)(nil)).Elem()) {
-		unmarshalerValue = field
-	} else if field.CanAddr() && reflect.PointerTo(field.Type()).Implements(reflect.TypeOf((*CSVUnmarshaller)(nil)).Elem()) {
-		unmarshalerValue = field.Addr()
-	}
+	csvUnmarshallerType := reflect.TypeOf((*CSVUnmarshaller)(nil)).Elem()
 
-	if unmarshalerValue.IsValid() {
-		if u, ok := unmarshalerValue.Interface().(CSVUnmarshaller); ok {
-			if err := u.UnmarshalCSV([]byte(strVal)); err != nil {
-				return fmt.Errorf("error parsing csv cell value to custom unmarshaller: %w", err)
-			}
+	fieldType := field.Type()
 
-			return nil // Important: Stop processing after a custom unmarshaler handles the field.
+	if reflect.PointerTo(fieldType).Implements(csvUnmarshallerType) {
+		if !field.CanAddr() {
+			return fmt.Errorf("field %s is not addressable and cannot be unmarshalled with a pointer receiver", fieldType.Name())
+		}
+
+		fieldPtr := field.Addr()
+
+		if unmarshaller, ok := fieldPtr.Interface().(CSVUnmarshaller); ok {
+			return unmarshaller.UnmarshalCSV([]byte(strVal))
 		}
 	}
 
 	switch field.Kind() {
 	case reflect.Bool:
-		switch strVal {
-		case "True", "true", "1":
+		s := strings.ToLower(strings.TrimSpace(strVal))
+		switch s {
+		case "true", "1":
 			field.SetBool(true)
-		case "False", "false", "0":
+		case "false", "0":
 			field.SetBool(false)
 		default:
-			if strings.TrimSpace(strVal) == "" {
+			if s == "" {
 				field.SetBool(reflect.Zero(field.Type()).Bool())
 				break
 			}
@@ -175,6 +174,31 @@ func setFieldValue(field reflect.Value, strVal string) error {
 
 	return nil
 }
+
+// func setFieldValue(field reflect.Value, strVal string) error {
+
+// 	csvUnmarshallerType := reflect.TypeOf((*CSVUnmarshaller)(nil)).Elem()
+// 	fieldType := reflect.TypeOf(field)
+// 	if reflect.PointerTo(fieldType).Implements(csvUnmarshallerType) {
+// 		// Check if the field's value is addressable. This is necessary
+// 		// to get a pointer to it.
+// 		if !field.CanAddr() {
+// 			return fmt.Errorf("field %s is not addressable and cannot be unmarshalled with a pointer receiver", fieldType.Name())
+// 		}
+
+// 		// Get the address of the field.
+// 		fieldPtr := field.Addr()
+
+// 		// Perform the type assertion on the pointer.
+// 		if unmarshaller, ok := fieldPtr.Interface().(CSVUnmarshaller); ok {
+// 			if err := unmarshaller.UnmarshalCSV([]byte(strVal)); err != nil {
+// 				return err
+// 			}
+// 		}
+// 	}
+
+// 	return nil
+// }
 
 // build a map with (key: csv header), (val: struct field index)
 func newHeaderToIndexMap(v any) (map[string]int, error) {
