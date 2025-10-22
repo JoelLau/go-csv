@@ -4,37 +4,26 @@ import (
 	"testing"
 
 	gocsv "github.com/JoelLau/go-csv"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCSVParser(t *testing.T) {
 	t.Parallel()
 
-	given := []byte("id,fruit\n1,apple\n2,banana\n3,cherry")
+	given := []byte(`ID,Chosen Name,Birth Date
+1,"Barrack Obama",1961-08-04
+2,"""Stone Cold"", Steve Austin",1964-12-08
+`)
 	got, err := gocsv.ReadAll(given)
 	want := [][]string{
-		{"id", "fruit"},
-		{"1", "apple"},
-		{"2", "banana"},
-		{"3", "cherry"},
+		{"ID", "Chosen Name", "Birth Date"},
+		{"1", "Barrack Obama", "1961-08-04"},
+		{"2", "\"Stone Cold\", Steve Austin", "1964-12-08"},
 	}
 
 	require.NoError(t, err)
-	require.Equal(t, want, got)
-}
 
-func TestReadRow(t *testing.T) {
-	t.Parallel()
-
-	given := "asdf,qwer,123,k!@#"
-	got, err := gocsv.ReadRow(given)
-	want := []string{
-		"asdf",
-		"qwer",
-		"123",
-		"k!@#",
-	}
-
-	require.NoError(t, err)
-	require.Equal(t, want, got)
+	diff := cmp.Diff(got, want)
+	require.Emptyf(t, diff, "%+v", diff)
 }
