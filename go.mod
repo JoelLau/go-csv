@@ -2,6 +2,10 @@ module github.com/JoelLau/go-csv
 
 go 1.25.1
 
+retract (
+	[v0.0.1, v0.0.4] // deprecated
+)
+
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/stretchr/testify v1.11.1
