@@ -4,7 +4,17 @@ import (
 	"strings"
 )
 
+type Parser struct {
+	Delimeter rune
+}
+
+var DefaultParser = &Parser{Delimeter: ','}
+
 func ReadAll(b []byte) ([][]string, error) {
+	return DefaultParser.ReadAll(b)
+}
+
+func (p *Parser) ReadAll(b []byte) ([][]string, error) {
 	rows := [][]string{}
 
 	index := 0
@@ -44,7 +54,7 @@ func ReadAll(b []byte) ([][]string, error) {
 			continue
 		}
 
-		if !isWithinQuotes && curr == ',' {
+		if !isWithinQuotes && curr == p.Delimeter {
 			row = append(row, sb.String())
 			sb.Reset()
 

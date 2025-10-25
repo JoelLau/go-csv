@@ -15,7 +15,9 @@ func TestCSVParser(t *testing.T) {
 1,"Barrack Obama",1961-08-04
 2,"""Stone Cold"", Steve Austin", 1964-12-08
 `)
-	got, err := gocsv.ReadAll(given)
+
+	p := gocsv.Parser{Delimeter: ','}
+	got, err := p.ReadAll(given)
 	want := [][]string{
 		{"ID", "Chosen Name", "Birth Date"},
 		{"1", "Barrack Obama", "1961-08-04"},
