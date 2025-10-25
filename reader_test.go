@@ -13,7 +13,7 @@ func TestCSVParser(t *testing.T) {
 
 	given := []byte(`ID,Chosen Name,Birth Date
 1,"Barrack Obama",1961-08-04
-2,"""Stone Cold"", Steve Austin",1964-12-08
+2,"""Stone Cold"", Steve Austin", 1964-12-08
 `)
 	got, err := gocsv.ReadAll(given)
 	want := [][]string{

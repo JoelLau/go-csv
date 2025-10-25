@@ -12,7 +12,7 @@ func ReadAll(b []byte) ([][]string, error) {
 	isWithinQuotes := false
 
 	row := []string{}
-	var sb strings.Builder
+	var sb strings.Builder // holds contents of the field we're currently building
 
 	for ; index < len(runes); index++ {
 		curr := runes[index]
@@ -23,7 +23,7 @@ func ReadAll(b []byte) ([][]string, error) {
 		}
 
 		if isWithinQuotes && curr == '"' {
-			// escape consecutive double quotes
+			// if field is quoted, replace 2 double quotes with 1 double quote (i.e. escape them)
 			if (index+1 < len(runes)) && (runes[index+1] == '"') {
 				sb.WriteRune(curr)
 				index++
@@ -49,13 +49,20 @@ func ReadAll(b []byte) ([][]string, error) {
 			sb.Reset()
 
 			isWithinQuotes = false
+
+			// skip the first space after commas - some programs export with ", " as a delimeter
+			if (index+1 < len(runes)) && (runes[index+1] == ' ') {
+				index++
+			}
 			continue
 		}
 
 		sb.WriteRune(curr)
 	}
 
-	if sb.String() != "" && len(row) != 0 {
+	// put whatever's left in "buffers" (sb, row) to the output if its not an empty row - we ignore those
+	row = append(row, sb.String())
+	if strings.TrimSpace(strings.Join(row, "")) != "" {
 		row = append(row, sb.String())
 		rows = append(rows, row)
 	}

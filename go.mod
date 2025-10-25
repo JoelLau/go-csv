@@ -3,7 +3,7 @@ module github.com/JoelLau/go-csv
 go 1.25.1
 
 retract (
-	[v0.0.1, v0.0.4] // deprecated
+	[v0.0.1, v0.0.5] // deprecated
 )
 
 require (

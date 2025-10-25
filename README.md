@@ -11,6 +11,16 @@ CSV encoder written in and for the Go programming language.
     - [x] build
     - [ ] code quality - golangci-lint
     - [x] correctness - tests
+- [ ] readall
+    - [x] basic read
+        - [x] add runes to field
+        - [x] commas split fields
+        - [x] newline split rows
+    - [x] special rules
+        - [x] skip empty last row
+        - [x] ignore commas and newlines in quoted strings
+        - [x] escape "" in qouted strings (double check what the correct escape sequence is)
+        - [x] trim first space after comma
 - [x] ~~set up CD~~ done automatically
     - [x] ~~push to go.dev on tag on `main`~~
 - [ ] create default structs of top level functions (similar to `DefaultHTTPClient`):
